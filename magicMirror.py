@@ -7,11 +7,14 @@ import sys
 import platform
 import pickle
 import random
+#import bs4GetWeatherToday as todayWea
+#import bs4GetWeather7d as d7dayWea
 
 class magicMirror:
       def __init__(self):
             self.title = "MagicMirror"
             self.weatherPng = 'png/rain.png'
+            #self.get_WeatherInfo()
             self.Mirror()
             return None
       #对dayLabel hourLabel miLabel实时显示时间
@@ -37,7 +40,6 @@ class magicMirror:
             self.c1 = ''
             #print(self.get_config())
             self.city = self.get_config()['city']
-            
             if self.c1 != self.city:
                   self.cityLabel.config(text=self.city)
                   self.cityLabel.after(1000,self.get_city)
@@ -64,7 +66,205 @@ class magicMirror:
                   self.newsLabel.config(text = a[1])
                   #print(a)
             self.newsLabel.after(1000,self.get_sinaNews)
-      #主体      
+      def get_WeatherInfo(self):
+            w = ''
+            mappd = {}
+            list7d = []
+            maptips = {}
+            with open('data/todayWea','r') as file:
+                  data = file.readlines()
+                  for i in data:
+                        k = i.split("@")[0].strip()
+                        v = i.split("@")[1].strip()
+                        mappd[k] = v
+            with open('data/tips','r') as file:
+                  data = file.readlines()
+                  for i in data:
+                        k = i.split(":")[0].strip()
+                        v = i.split(":")[1].strip()
+                        maptips[k] = v
+                  #print (maptips)
+            with open('data/7daysWea','r') as file:
+                  data = file.readlines()
+                  #list1d = []
+                  for i in data:
+                        list7d.append(i.split(','))
+                  
+                  #print (list7d)
+            daytime = mappd['白天']
+            night = mappd['夜间']
+            weekdate = time.strftime('%A') #获取今天是星期几
+            #print(mappd)
+            sunrise = mappd['日出'].strip()
+            sundown = mappd['日落'].strip()
+            if weekdate =='Monday':
+                  mappd['日期'] = '星期一'
+            elif weekdate =='Tuesday':
+                  mappd['日期'] = '星期二'
+            elif weekdate =='Wednesday':
+                  mappd['日期'] = '星期三'
+            elif weekdate =='Thursday':
+                  mappd['日期'] = '星期四'
+            elif weekdate =='Friday':
+                  mappd['日期'] = '星期五'
+            elif weekdate =='Saturday':
+                  mappd['日期'] = '星期六'
+            elif weekdate =='Sunday':
+                  mappd['日期'] = '星期日'
+            day = mappd['日期']
+            #print(mappd)
+            high = list7d[0][2].split(':')[1]
+            mappd['最高温'] = high
+            low = list7d[0][3].split(':')[1]
+            mappd['最低温'] = low
+            wind = list7d[0][5].split(':')[1].strip()
+            mappd['风向'] = wind
+            windforce = list7d[0][4].split(':')[1].strip()
+            mappd['风力'] = windforce
+            aqi = maptips['空气污染扩散指数'].split(' ')[0]
+            tip = maptips['空气污染扩散指数'].split(' ')[1]
+            #print(tip)
+            localtime = time.strftime('%H:%M')
+            if day !=w:
+                  self.todayLabel.config(text=day)
+                  self.tump.config(text=high+'~'+low+'℃')
+                  self.wind.config(text=wind)
+                  self.windforce.config(text=windforce)
+                  self.sunriseL.config(text='日出 '+sunrise)
+                  self.sundownL.config(text='日落 '+sundown)
+                  self.outAirQ.config(text='室外空气质量指数:'+str(aqi))
+                  self.outAirQtip.config(text=tip)
+            if localtime>sunrise and localtime<sundown:
+                  self.tWeather.config(text='白天:'+daytime)
+                  if '雷阵雨' in daytime :
+                        self.weatherPng='weather_tempest.png'
+                  elif '阵雨' in daytime and '雷' not in daytime:
+                        self.weatherPng='rain.png'
+                  elif '中雨' in daytime or '大雨' in daytime:
+                        self.weatherPng = 'rain.png'
+                  elif '多云' in daytime:
+                        self.weatherPng='Partly_Cloudy_Day_48px.png'
+                  elif '小雨' in daytime:
+                        self.weatherPng='weather_xiaoyu_48px.png'
+                  elif '雪' in daytime:
+                        self.weatherPng='weather_snow_48px.png'
+                  elif '晴' in daytime:
+                        self.weatherPng='sun.png'
+                  elif '雾' in daytime:
+                        self.weatherPng ='weather_fog_48px.png'
+                  else :self.weatherPng='weather_cloud_32px.png'
+                  self.weater = tk.PhotoImage(file='png/'+self.weatherPng)                        
+            else:
+                  self.tWeather.config(text='晚上:'+night)
+                  if '雷阵雨' in night:
+                        self.weatherPng='weather_tempest.png'
+                  elif '阵雨' in night and '雷' not in night:
+                        self.weatherPng='rain.png'
+                  elif '中雨' in night or '大雨' in night:
+                        self.weatherPng='rain.png'
+                  elif '多云' in night:
+                        self.weatherPng='Partly_Cloudy_Day_48px.png'
+                  elif '小雨' in night:
+                        self.weatherPng='weather_xiaoyu_48px.png'
+                  elif '雪' in night:
+                        self.weatherPng='weather_snow_48px.png'
+                  elif '晴' in night:
+                        self.weatherPng='sun.png'
+                  elif '雾' in night:
+                        self.weatherPng ='weather_fog_48px.png'
+                  else :self.weatherPng='weather_cloud_32px.png'
+                  self.weater = tk.PhotoImage(file='png/'+self.weatherPng)
+                        
+            self.pnglabel.config(image=self.weater)
+            #TODO
+            i = random.randint(0,len(list(maptips))-1)
+            k = list(maptips)[i]
+            v = maptips[k]
+            
+            self.tipsLabel.config(text=k+':'+v)
+            self.todayLabel.after(18000,self.get_WeatherInfo)
+      def get_featureWea(self):
+            dayMap = {}
+            dayMap['monday'] = '星期一'
+            dayMap['tuesday'] = '星期二'
+            dayMap['wednesday'] = '星期三'
+            dayMap['thursday'] = '星期四'
+            dayMap['friday'] = '星期五'
+            dayMap['saturday'] = '星期六'
+            dayMap['sunday'] = '星期日'
+            list7d = []
+            with open('data/7daysWea','r') as file:
+                  data = file.readlines()
+                  #list1d = []
+                  for i in data:
+                        list7d.append(i.split(','))
+            #index 1,2,3,4
+            #第二天
+            day = dayMap[list7d[1][0].split(":")[1].split(" ")[0].lower()]
+            high = list7d[1][2].split(":")[1].strip().lower()
+            low = list7d[1][3].split(":")[1].strip().lower()
+            tump = list7d[1][1].split(":")[1].strip().lower()
+            wind = list7d[1][5].split(":")[1].strip().lower()
+            windforce = list7d[1][4].split(":")[1].strip().lower()
+            #print(day,high,low,tump,wind,windforce)
+            if day !='':
+                  self.ffLabel.config(text=day)
+                  self.fftLabel.config(text=high+'~'+low+'℃')
+                  #self.ffaLabel.config(text=tip)
+                  self.ffweLabel.config(text=tump)
+                  self.ffwnLabel.config(text=wind)
+                  self.ffwnFLabel.config(text=windforce)
+            #第三天    
+            day = dayMap[list7d[2][0].split(":")[1].split(" ")[0].lower()]
+            #print (day)
+            high = list7d[2][2].split(":")[1].strip().lower()
+            low = list7d[2][3].split(":")[1].strip().lower()
+            tump= list7d[2][1].split(":")[1].strip().lower()
+            wind = list7d[2][5].split(":")[1].strip().lower()
+            windforce = list7d[2][4].split(":")[1].strip().lower()
+            #print (list7d[1],list7d[2],list7d[3],list7d[4])
+            if day !='':
+                  self.thLabel.config(text=day)
+                  self.thtLabel.config(text=high+'~'+low+'℃')
+                  #self.thaLabel.config(text=tip)
+                  self.thweLabel.config(text=tump)
+                  self.thwnLabel.config(text=wind)
+                  self.thwnFLabel.config(text=windforce)
+            #第四天    
+            day = dayMap[list7d[3][0].split(":")[1].split(" ")[0].lower()]
+            #print (day)
+            high = list7d[3][2].split(":")[1].strip().lower()
+            low = list7d[3][3].split(":")[1].strip().lower()
+            tump = list7d[3][1].split(":")[1].strip().lower()
+            wind = list7d[3][5].split(":")[1].strip().lower()
+            windforce = list7d[3][4].split(":")[1].strip().lower()
+            #print (list7d[1],list7d[2],list7d[3],list7d[4])
+            if day !='':
+                  self.ftLabel.config(text=day)
+                  self.fttLabel.config(text=high+'~'+low+'℃')
+                  #self.ftaLabel.config(text=tip)
+                  self.ftweLabel.config(text=tump)
+                  self.ftwnLabel.config(text=wind)
+                  self.ftwnFLabel.config(text=windforce)
+            #第五天    
+            day = dayMap[list7d[4][0].split(":")[1].split(" ")[0].lower()]
+            #print (day)
+            high = list7d[4][2].split(":")[1].strip().lower()
+            low = list7d[4][3].split(":")[1].strip().lower()
+            tump = list7d[4][1].split(":")[1].strip().lower()
+            wind = list7d[4][5].split(":")[1].strip().lower()
+            windforce = list7d[4][4].split(":")[1].strip().lower()
+            #print (list7d[1],list7d[2],list7d[3],list7d[4])
+            if day !='':
+                  self.fiLabel.config(text=day)
+                  self.fitLabel.config(text=high+'~'+low+'℃')
+                  #self.fiaLabel.config(text=tip)
+                  self.fiweLabel.config(text=tump)
+                  self.fiwnLabel.config(text=wind)
+                  self.fiwnFLabel.config(text=windforce)
+            self.fiwnFLabel.after(5000,self.get_featureWea)
+            return None
+      #主体
       def Mirror(self):
             self.mirror = tk.Tk()
             self.mirror.title(self.title)
@@ -113,6 +313,86 @@ class magicMirror:
             self.get_city()
 
             #TODO 获取当日天气与未来天气信息
+            self.weather = tk.PhotoImage(file='png/weather_tempest.png')
+            self.pnglabel = tk.Label(self.mainFrame,image=self.weather,borderwidth=0)
+            self.tWeather = tk.Label(self.mainFrame,text='白天:雷雨',font=('宋体',14,'bold'),fg='white',bg='black')
+            self.tump = tk.Label(self.mainFrame,text = '27℃~34℃',font=('宋体',14,'bold'),fg='white',bg='black')
+            self.wind = tk.Label(self.mainFrame,text='东南风',font = ('宋体',14,'bold'),fg='white',bg = 'black')
+            self.windforce = tk.Label(self.mainFrame,text='4 级',font = ('宋体',14,'bold'),fg='white',bg = 'black')
+            self.sunriseL = tk.Label(self.mainFrame,text='日出:06:59',font = ('宋体',14,'bold'),fg='white',bg = 'black')
+            self.sundownL = tk.Label(self.mainFrame,text='日落:18:59',font = ('宋体',14,'bold'),fg='white',bg = 'black')
+            self.outAirQ = tk.Label(self.mainFrame,text='室外空气质量:优',font = ('宋体',14,'bold'),fg='white',bg = 'black')
+            self.outAirQtip = tk.Label(self.mainFrame,text='适合户外活动',font = ('宋体',14,'bold'),fg='white',bg = 'black')
+            self.pnglabel.place(x=450,y=90)
+            self.tWeather.place(x=530,y=90)
+            self.tump.place(x=640,y=90)
+            self.wind.place(x=530,y=115)
+            self.windforce.place(x=640,y=115)
+            self.sunriseL.place(x=450,y=140)
+            self.sundownL.place(x=635,y=140)
+            self.outAirQ.place(x=450,y=165)
+            self.outAirQtip.place(x=450,y=190)
+            #每日贴士
+            self.tipsLabel = tk.Label(self.mainFrame,text='避免长时间在日光下暴晒或在高温环境中工作。',
+                                      font = ('楷体',16,'bold'),fg = 'white',bg = 'black',width = 60,height =3,
+                                      wraplength = 700,anchor = 'nw',justify = 'left')
+            self.tipsLabel.place(x=34,y=960)
+            
+            self.get_WeatherInfo()
+
+            #未来四天的天气预报
+            self.ffLabel = tk.Label(text='星期三',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.fftLabel = tk.Label(text='36~28℃',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            #self.ffaLabel = tk.Label(text='差严重污染',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ffweLabel = tk.Label(text='多云',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ffwnLabel = tk.Label(text='东南风',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ffwnFLabel = tk.Label(text='3-4级',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ffLabel.place(x=350,y=235)
+            self.fftLabel.place(x=435,y=235)
+            #self.ffaLabel.place(x=445,y=235)
+            self.ffweLabel.place(x=520,y=235)
+            self.ffwnLabel.place(x=630,y=235)
+            self.ffwnFLabel.place(x=705,y=235)
+            
+            self.thLabel = tk.Label(text='星期三',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.thtLabel = tk.Label(text='36~28℃',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            #self.thaLabel = tk.Label(text='差严重污染',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.thweLabel = tk.Label(text='多云',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.thwnLabel = tk.Label(text='东南风',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.thwnFLabel = tk.Label(text='3-4级',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.thLabel.place(x=350,y=260)
+            self.thtLabel.place(x=435,y=260)
+            #self.thaLabel.place(x=445,y=260)
+            self.thweLabel.place(x=520,y=260)
+            self.thwnLabel.place(x=630,y=260)
+            self.thwnFLabel.place(x=705,y=260)
+
+            self.ftLabel = tk.Label(text='星期三',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.fttLabel = tk.Label(text='36~28℃',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            #self.ftaLabel = tk.Label(text='差严重污染',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ftweLabel = tk.Label(text='多云',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ftwnLabel = tk.Label(text='东南风',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ftwnFLabel = tk.Label(text='3-4级',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.ftLabel.place(x=350,y=285)
+            self.fttLabel.place(x=435,y=285)
+            #self.ftaLabel.place(x=445,y=285)
+            self.ftweLabel.place(x=520,y=285)
+            self.ftwnLabel.place(x=630,y=285)
+            self.ftwnFLabel.place(x=705,y=285)
+
+            self.fiLabel = tk.Label(text='星期三',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.fitLabel = tk.Label(text='36~28℃',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            #self.fiaLabel = tk.Label(text='差严重污染',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.fiweLabel = tk.Label(text='多云',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.fiwnLabel = tk.Label(text='东南风',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.fiwnFLabel = tk.Label(text='3-4级',font = ('楷体',14,'bold'),fg='gray',bg = 'black')
+            self.fiLabel.place(x=350,y=310)
+            self.fitLabel.place(x=435,y=310)
+            #self.fiaLabel.place(x=445,y=310)
+            self.fiweLabel.place(x=520,y=310)
+            self.fiwnLabel.place(x=630,y=310)
+            self.fiwnFLabel.place(x=705,y=310)
+            self.get_featureWea()
 
             #新浪实时新闻显示
             self.newsLabelTime = tk.Label(self.mainFrame,text='新浪消息:10:27:37',font = ('宋体',18,'bold'),fg = 'white',bg='black')
@@ -120,12 +400,11 @@ class magicMirror:
             self.newsLabel = tk.Label(self.mainFrame,text='【最高检：检察机关依法对鲁炜、莫建成、张杰辉三案提起公诉】',
                                       font = ('宋体',14,'bold'),fg = 'white',bg='black',width = 63,height=9,
                                       wraplength = 690,anchor = 'nw',justify = 'left',pady=3)
-            self.newsLabel.place(x=34,y=800)
+            self.newsLabel.place(x=34,y=1130)
             self.get_sinaNews()
-
-            self.mirror.mainloop()
             
-
+            self.mirror.mainloop()
+#magicMirror()
 magicMirror()
 
             
